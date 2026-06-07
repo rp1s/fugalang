@@ -17,6 +17,11 @@ type Lexer struct {
 	pos            token.Position
 }
 
+// для интерфейса для возможности получить Literal коректно
+func (lex *Lexer) Input() string {
+	return lex.input
+}
+
 func (lex *Lexer) Reset() {
 	lex = New(lex.input, lex.pos.FileName)
 }
@@ -101,7 +106,7 @@ func (lex *Lexer) readMultiLineComment() token.Token {
 		lex.advance()
 	}
 
-	return lex.NewToken(token.COMMENT)
+	return lex.NewToken(token.M_COMMENT)
 }
 
 //
@@ -152,8 +157,4 @@ func (lex *Lexer) NewToken(kind token.TokenKind) token.Token {
 		Start: lex.tokStart,
 		End:   lex.pos.Offset,
 	}
-}
-
-func (lex *Lexer) LiteralToken(tk token.Token) string {
-	return lex.input[tk.Start:tk.End]
 }

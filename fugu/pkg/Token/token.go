@@ -3,10 +3,11 @@ package token
 type TokenKind uint16
 
 const (
-	_       TokenKind = iota
-	ILLEGAL           //
-	COMMENT           // comment
-	SPACING           // whitespace
+	_         TokenKind = iota
+	ILLEGAL             //
+	COMMENT             // comment
+	M_COMMENT           // /* comment */
+	SPACING             // whitespace
 	EOF
 
 	INTEGER    // 123
@@ -137,6 +138,21 @@ const (
 
 	operator_end
 )
+
+type OutLiteral interface {
+	Input() string
+}
+
+func (tk Token) Literal(source OutLiteral) string {
+	switch tk.Kind {
+	case COMMENT:
+		return source.Input()[tk.Start+2 : tk.End]
+	case M_COMMENT:
+		return source.Input()[tk.Start+2 : tk.End-2]
+	default:
+		return source.Input()[tk.Start:tk.End]
+	}
+}
 
 type Token struct {
 	Kind  TokenKind

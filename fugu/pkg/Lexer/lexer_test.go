@@ -18,7 +18,7 @@ func TestLexerComment(t *testing.T) {
 			name:            "Тест обработки однострочный комментарий",
 			input:           "// привет slava",
 			expectedKind:    token.COMMENT,
-			expectedLiteral: "// привет slava",
+			expectedLiteral: " привет slava",
 		},
 		{
 			name: "Тест обработки многострочного коментария",
@@ -30,13 +30,13 @@ func TestLexerComment(t *testing.T) {
 */ 
 `,
 			checkSpaceTk: true,
-			expectedKind: token.COMMENT,
-			expectedLiteral: `/* 
+			expectedKind: token.M_COMMENT,
+			expectedLiteral: ` 
 Привет, это многострочный коммент для проверки корректной работы лексера) 
 Пока расскажу вам про моего замечательного кота Фантика (полное имя Элефант). 
 Он был породистым мейнкуном, я его очень люблю, но по состоянию здоровья 
 моей семье пришлось отдать его знакомым :( 
-*/`,
+`,
 		},
 	}
 
@@ -50,7 +50,7 @@ func TestLexerComment(t *testing.T) {
 			continue // переход к след тесту
 		}
 
-		lit := lex.LiteralToken(tk)
+		lit := tk.Literal(lex)
 		if lit != tt.expectedLiteral {
 			t.Errorf("[%s] Неверный литерал.\nОжидался:\n%q\n\nПолучен:\n%q",
 				tt.name, tt.expectedLiteral, lit)
