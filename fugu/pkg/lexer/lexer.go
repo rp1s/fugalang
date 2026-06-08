@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fugu/pkg/reporter"
 	"fugu/pkg/token"
 	"unicode"
 	"unicode/utf8"
@@ -15,6 +16,8 @@ type Lexer struct {
 	tokStartLine   int // номер строки начала токена
 	tokStartColumn int // номер колонки начала токена
 	pos            token.Position
+
+	report *reporter.Reporter
 }
 
 // для интерфейса для возможности получить Literal коректно
@@ -33,10 +36,15 @@ func New(input, fileName string) *Lexer {
 		pos: token.Position{
 			FileName: fileName,
 			Line:     1,
-			Column:   1,
+			Column:   0,
 			Offset:   0,
 		},
 	}
+	lex.report = &reporter.Reporter{
+		Source: lex,
+	}
+	lex.report.Init()
+
 	lex.advance()
 	return lex
 }
