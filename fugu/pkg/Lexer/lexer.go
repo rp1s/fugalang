@@ -63,9 +63,13 @@ func (lex *Lexer) NextToken() token.Token {
 			return lex.readLineComment()
 		} else if lex.peekRn() == '*' {
 			return lex.readMultiLineComment()
-		} else {
-			lex.NewToken(token.DIVIDE)
+		} else if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.A_DIVIDE)
 		}
+
+		lex.advance()
+		return lex.NewToken(token.DIVIDE)
 
 	case '.':
 		if lex.peekRn() == '.' {
@@ -82,9 +86,164 @@ func (lex *Lexer) NextToken() token.Token {
 		}
 		lex.advance()
 		return lex.NewToken(token.DOT)
+
+	case '<':
+		if lex.peekRn() == '<' {
+			lex.advance().advance()
+			return lex.NewToken(token.SHR_LESS)
+		} else if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.LESS_EQUAL)
+		}
+		lex.advance()
+		return lex.NewToken(token.LESS)
+
+	case '>':
+		if lex.peekRn() == '>' {
+			lex.advance().advance()
+			return lex.NewToken(token.SHR_GREATER)
+		} else if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.GREATER_EQUAL)
+		}
+		lex.advance()
+		return lex.NewToken(token.GREATER)
+
+	case '-':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.A_DECREASE)
+		}
+
+		lex.advance()
+		return lex.NewToken(token.DECREASE)
+
+	case '+':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.A_INCREASE)
+		}
+		lex.advance()
+		return lex.NewToken(token.INCREASE)
+
+	case '*':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.A_MULTIPLY)
+		}
+		lex.advance()
+		return lex.NewToken(token.MULTIPLY)
+
+	case '%':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.A_REMAINDER)
+		}
+		lex.advance()
+		return lex.NewToken(token.REMAINDER)
+
+	case '^':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.A_DEGREE)
+		}
+		lex.advance()
+		return lex.NewToken(token.DEGREE)
+
+	case '~':
+		lex.advance()
+		return lex.NewToken(token.BITWISE_NOT)
+
+	case '&':
+		if lex.peekRn() == '&' {
+			lex.advance().advance()
+			return lex.NewToken(token.AND)
+		}
+		lex.advance()
+		return lex.NewToken(token.TAKE_LINK)
+
+	case '!':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.NOT_EQUAL)
+		}
+		lex.advance()
+		return lex.NewToken(token.NOT)
+
+	case '?':
+		if lex.peekRn() == ':' {
+			lex.advance().advance()
+			return lex.NewToken(token.DEFAULT)
+		} else if lex.peekRn() == '.' {
+			lex.advance().advance()
+			return lex.NewToken(token.SAFE_DOT)
+		}
+
+	case '=':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.LIKEN)
+		} else if lex.peekRn() == '>' {
+			lex.advance().advance()
+			return lex.NewToken(token.GOES_OVER)
+		}
+
+		lex.advance()
+		return lex.NewToken(token.REDEFINITION)
+
+	case '|':
+		if lex.peekRn() == '|' {
+			lex.advance().advance()
+			return lex.NewToken(token.OR)
+		} else if lex.peekRn() == '>' {
+			lex.advance().advance()
+			return lex.NewToken(token.PIPE)
+		}
+
+	case ':':
+		if lex.peekRn() == '=' {
+			lex.advance().advance()
+			return lex.NewToken(token.APPROPRIATE)
+		}
+
+		lex.advance()
+		return lex.NewToken(token.COLON)
+
+	case '(':
+		lex.advance()
+		return lex.NewToken(token.L_PAREN)
+
+	case ')':
+		lex.advance()
+		return lex.NewToken(token.R_PAREN)
+
+	case '{':
+		lex.advance()
+		return lex.NewToken(token.L_BRACE)
+
+	case '}':
+		lex.advance()
+		return lex.NewToken(token.R_BRACE)
+
+	case '[':
+		lex.advance()
+		return lex.NewToken(token.L_BRACK)
+
+	case ']':
+		lex.advance()
+		return lex.NewToken(token.R_BRACK)
+
+	case ';':
+		lex.advance()
+		return lex.NewToken(token.END)
+
+	case ',':
+		lex.advance()
+		return lex.NewToken(token.COMMA)
+
 	}
 
-	// TODO: разбор операторов и тд
+	// TODO: разбор kw
 	lex.advance()
 	return lex.NewToken(token.ILLEGAL)
 }

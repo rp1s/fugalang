@@ -88,6 +88,7 @@ const (
 	A_MULTIPLY   // *=
 	A_DIVIDE     // /=
 	A_REMAINDER  // %=
+	A_DEGREE     // ^=
 
 	// логические операторы сравнения
 	LIKEN         // ==
@@ -112,7 +113,6 @@ const (
 	SHR_LESS    // <<
 	SHR_GREATER // >>
 	BITWISE_NOT // ~
-	TAKE_LINK   // &
 
 	// операторы диапазонов
 	OP_RANGE        // ..   (Исключающий / Открытый)
@@ -120,10 +120,11 @@ const (
 	RANGE_HALF_OPEN // ..<  (Полуоткрытый)
 
 	// операторы управления данных
-	GOES_OVER // ->
+	GOES_OVER //  =>
 	PIPE      // |>
 	DEFAULT   // ?:
 	SAFE_DOT  // ?.
+	TAKE_LINK // &
 
 	// операторы группировки
 	L_PAREN // (
