@@ -46,7 +46,7 @@ func (lex *Lexer) NextToken() token.Token {
 	lex.tokStartLine = lex.pos.Line
 	lex.tokStartColumn = lex.pos.Column
 
-	if lex.curPos >= len(lex.input) {
+	if lex.rn == 0 {
 		return lex.NewToken(token.EOF)
 	}
 
@@ -67,7 +67,23 @@ func (lex *Lexer) NextToken() token.Token {
 			lex.NewToken(token.DIVIDE)
 		}
 
+	case '.':
+		if lex.peekRn() == '.' {
+			lex.advance() // едим первую .
+			if lex.peekRn() == '=' {
+				lex.advance().advance()
+				return lex.NewToken(token.RANGE_INCL)
+			} else if lex.peekRn() == '<' {
+				lex.advance().advance()
+				return lex.NewToken(token.RANGE_HALF_OPEN)
+			}
+			lex.advance()
+			return lex.NewToken(token.OP_RANGE)
+		}
+		lex.advance()
+		return lex.NewToken(token.DOT)
 	}
+
 	// TODO: разбор операторов и тд
 	lex.advance()
 	return lex.NewToken(token.ILLEGAL)
@@ -75,8 +91,7 @@ func (lex *Lexer) NextToken() token.Token {
 
 func (lex *Lexer) readLineComment() token.Token {
 	// Пропускаем '//'
-	lex.advance()
-	lex.advance()
+	lex.advance().advance()
 
 	// останавливаемся перед '\n'
 	for lex.rn != '\n' && lex.rn != 0 {
@@ -88,8 +103,7 @@ func (lex *Lexer) readLineComment() token.Token {
 
 func (lex *Lexer) readMultiLineComment() token.Token {
 	// пропуск '/*'
-	lex.advance()
-	lex.advance()
+	lex.advance().advance()
 
 	for {
 		// TODO: надо выкинуть в верх ошибку: файл закончился, а комментарий так и не был закрыт
@@ -98,8 +112,7 @@ func (lex *Lexer) readMultiLineComment() token.Token {
 		}
 
 		if lex.rn == '*' && lex.peekRn() == '/' {
-			lex.advance() // '*'
-			lex.advance() // '/'
+			lex.advance().advance() // '*', '/'
 			break
 		}
 
@@ -113,11 +126,11 @@ func (lex *Lexer) readMultiLineComment() token.Token {
 // вспомогательный функционал
 //
 
-func (lex *Lexer) advance() {
+func (lex *Lexer) advance() *Lexer {
 	if lex.curPos >= len(lex.input) {
 		lex.rn = 0 // \x00
 		lex.pos.Offset = lex.curPos
-		return
+		return lex
 	}
 
 	r, size := utf8.DecodeRuneInString(lex.input[lex.curPos:])
@@ -132,9 +145,11 @@ func (lex *Lexer) advance() {
 	} else {
 		lex.pos.Column++
 	}
+
+	return lex
 }
 
-// 0 - следущий симвл после Lexer.curPos
+// возвращает следущий симвл после Lexer.curPos
 func (lex *Lexer) peekRn() rune {
 	if lex.curPos >= len(lex.input) {
 		return 0

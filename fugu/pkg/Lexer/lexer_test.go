@@ -72,3 +72,38 @@ func TestLexerComment(t *testing.T) {
 
 	}
 }
+
+func TestLexerOpRange(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        string
+		expectedKind token.TokenKind
+	}{
+		{
+			name:         "Тест 1",
+			input:        "..",
+			expectedKind: token.OP_RANGE,
+		},
+		{
+			name:         "Тест 2",
+			input:        "..=",
+			expectedKind: token.RANGE_INCL,
+		},
+		{
+			name:         "Тест 3",
+			input:        "..<",
+			expectedKind: token.RANGE_HALF_OPEN,
+		},
+	}
+
+	for _, tt := range tests {
+		lex := New(tt.input, "main.fg")
+		tk := lex.NextToken()
+
+		if tk.Kind != tt.expectedKind {
+			t.Errorf("[%s] Неверный тип токена. Ожидался: %s, получен: %s",
+				tt.name, tt.expectedKind.String(), tk.Kind.String())
+			continue // переход к след тесту
+		}
+	}
+}

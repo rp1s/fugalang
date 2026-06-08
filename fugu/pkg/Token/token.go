@@ -10,6 +10,8 @@ const (
 	SPACING             // whitespace
 	EOF
 
+	literals_start
+
 	INTEGER    // 123
 	IMAGINARY  // 123i
 	FLOATING   // 12.3
@@ -19,6 +21,7 @@ const (
 	CHARACTER  // 'a'
 	IDENTIFIER // myVar
 
+	literals_end
 	keyword_start
 
 	// ключевые слова объявления модулей и использования
@@ -75,7 +78,6 @@ const (
 	UNSAFE // блок небезопасного кода, требующий явного разрешения
 
 	keyword_end
-
 	operator_start
 
 	// операторы присваевания
@@ -113,8 +115,9 @@ const (
 	TAKE_LINK   // &
 
 	// операторы диапазонов
-	OP_RANGE   // ..=
-	OP_T_RANGE // .. and ..<
+	OP_RANGE        // ..   (Исключающий / Открытый)
+	RANGE_INCL      // ..=  (Включающий / Закрытый)
+	RANGE_HALF_OPEN // ..<  (Полуоткрытый)
 
 	// операторы управления данных
 	GOES_OVER // ->
@@ -327,8 +330,10 @@ func (tk TokenKind) String() string {
 		return "TAKE_LINK"
 	case OP_RANGE:
 		return "OP_RANGE"
-	case OP_T_RANGE:
-		return "OP_T_RANGE"
+	case RANGE_HALF_OPEN:
+		return "RANGE_HALF_OPEN"
+	case RANGE_INCL:
+		return "RANGE_INCL"
 	case GOES_OVER:
 		return "GOES_OVER"
 	case PIPE:
