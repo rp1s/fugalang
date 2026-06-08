@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestLexerComment(t *testing.T) {
+func TestComment(t *testing.T) {
 	// 1. Описываем структуру тест-кейса
 	tests := []struct {
 		name            string
@@ -73,7 +73,7 @@ func TestLexerComment(t *testing.T) {
 	}
 }
 
-func TestLexerOperator(t *testing.T) {
+func TestOperator(t *testing.T) {
 	tests := []struct {
 		name         string
 		input        string
@@ -147,6 +147,50 @@ func TestLexerOperator(t *testing.T) {
 		if tk.Kind != tt.expectedKind {
 			t.Errorf("[%s] Неверный тип токена. Ожидался: %s, получен: %s",
 				tt.name, tt.expectedKind.String(), tk.Kind.String())
+			continue
+		}
+	}
+}
+
+func TestLiteral(t *testing.T) {
+	tests := []struct {
+		name            string
+		input           string
+		expectedKind    token.TokenKind
+		expectedLiteral string
+	}{
+		{name: "Идентификатор начинающийся числом", input: "10pixel", expectedKind: token.IDENTIFIER, expectedLiteral: "10pixel"},
+		{name: "Идентификатор с цифрами и подчёркиванием", input: "2stack", expectedKind: token.IDENTIFIER, expectedLiteral: "2stack"},
+		{name: "Обычный идентификатор с подчёркивания", input: "_init__", expectedKind: token.IDENTIFIER, expectedLiteral: "__init__"},
+
+		{name: "Ключевое слово module", input: "module", expectedKind: token.MODULE, expectedLiteral: "module"},
+		{name: "Ключевое слово fn", input: "fn", expectedKind: token.FN, expectedLiteral: "fn"},
+
+		{name: "Целое число (INTEGER)", input: "12443", expectedKind: token.INTEGER, expectedLiteral: "12443"},
+		{name: "Дробное число (FLOATING)", input: "12.3", expectedKind: token.FLOATING, expectedLiteral: "12.3"},
+		{name: "Мнимое целое число (IMAGINARY)", input: "123i", expectedKind: token.IMAGINARY, expectedLiteral: "123i"},
+		{name: "Мнимое дробное число (IMAGINARY)", input: "12.3i", expectedKind: token.IMAGINARY, expectedLiteral: "12.3i"},
+
+		{name: "Обычная строка (STRING)", input: `"hello world"`, expectedKind: token.STRING, expectedLiteral: "hello world"},
+		{name: "Сырая строка (RAW_STRING)", input: "`multiline code`", expectedKind: token.RAW_STRING, expectedLiteral: "multiline code"},
+		{name: "Одиночный символ (CHARACTER)", input: "'я'", expectedKind: token.CHARACTER, expectedLiteral: "я"},
+		{name: "Экранированный символ (CHARACTER)", input: "'\\n'", expectedKind: token.CHARACTER, expectedLiteral: "\\n"},
+		{name: "Строка с интерполяцией (T_STRING)", input: `"status: ${code}"`, expectedKind: token.T_STRING, expectedLiteral: "status: ${code}"},
+	}
+
+	for _, tt := range tests {
+		lex := New(tt.input, "main.fg")
+		tk := lex.NextToken()
+
+		if tk.Kind != tt.expectedKind {
+			t.Errorf("[%s] Неверный тип токена. Ожидался: %s, получен: %s",
+				tt.name, tt.expectedKind.String(), tk.Kind.String())
+			continue
+		}
+
+		if tk.Literal(lex) != tt.expectedLiteral {
+			t.Errorf("[%s] Неверный литерал. Ожидался: %q, получен: %q",
+				tt.name, tt.expectedLiteral, tk.Literal(lex))
 			continue
 		}
 	}

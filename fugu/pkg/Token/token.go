@@ -4,7 +4,7 @@ type TokenKind uint16
 
 const (
 	_         TokenKind = iota
-	ILLEGAL             //
+	ILLEGAL             // неизвестный токен
 	COMMENT             // comment
 	M_COMMENT           // /* comment */
 	SPACING             // whitespace
@@ -179,6 +179,70 @@ func (tk Token) Literal(source OutLiteral) string {
 	default:
 		return source.Input()[tk.Start:tk.End]
 	}
+}
+
+var keywords = map[string]TokenKind{
+	// Объявление модулей и использование
+	"module": MODULE,
+	"use":    USE,
+
+	// Объявления структур данных и переменных
+	"fn":        FN,
+	"let":       LET,
+	"mut":       MUT,
+	"const":     CONST,
+	"type":      TYPE,
+	"enum":      ENUM,
+	"struct":    STRUCT,
+	"interface": INTERFACE,
+
+	// Встроенные значения
+	"none":  NONE,
+	"true":  TRUE,
+	"false": FALSE,
+	"chan":  CHAN,
+
+	// Контрольные конструкции
+	"return":   RETURN,
+	"match":    MATCH,
+	"if":       IF,
+	"else":     ELSE,
+	"for":      FOR,
+	"range":    RANGE,
+	"continue": CONTINUE,
+	"break":    BREAK,
+
+	// Управление выполнением
+	"defer":  DEFER,
+	"select": SELECT,
+
+	// Асинхронность и корутины
+	"async": ASYNC,
+	"await": AWAIT,
+	"yield": YIELD,
+
+	// Системные потоки ОС
+	"spawn": SPAWN,
+
+	// Групповое управление задачами
+	"sync": SYNC,
+	"wait": WAIT,
+	"halt": HALT,
+
+	// Низкоуровневые операции и FFI
+	"clang":  CLANG,
+	"export": EXPORT,
+	"extern": EXTERN,
+	"unsafe": UNSAFE,
+}
+
+// проверяет является ли строка ключевым словом.
+// Если да возвращает его тип, если нет возвращает простой IDENTIFIER.
+func SearchKeyword(ident string) TokenKind {
+	if kind, ok := keywords[ident]; ok {
+		return kind
+	}
+	return IDENTIFIER
 }
 
 func (tk TokenKind) String() string {

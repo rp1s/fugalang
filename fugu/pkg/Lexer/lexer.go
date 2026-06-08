@@ -241,10 +241,30 @@ func (lex *Lexer) NextToken() token.Token {
 		lex.advance()
 		return lex.NewToken(token.COMMA)
 
+	case '"':
+		return lex.readString()
+	case '`':
+		return lex.readRawString()
+
+	case '\'':
+		return lex.readChar()
+
+	default:
+		if unicode.IsDigit(lex.rn) {
+			return lex.readNumber()
+		} else if unicode.IsLetter(lex.rn) || lex.rn == '_' {
+			for unicode.IsLetter(lex.rn) || unicode.IsDigit(lex.rn) || lex.rn == '_' {
+				lex.advance()
+			}
+
+			return lex.NewToken(token.SearchKeyword(lex.input[lex.tokStart:lex.pos.Offset]))
+		}
+
+		lex.advance()
+		return lex.NewToken(token.ILLEGAL)
+
 	}
 
-	// TODO: разбор kw
-	lex.advance()
 	return lex.NewToken(token.ILLEGAL)
 }
 
@@ -279,6 +299,116 @@ func (lex *Lexer) readMultiLineComment() token.Token {
 	}
 
 	return lex.NewToken(token.M_COMMENT)
+}
+
+func (lex *Lexer) readString() token.Token {
+	lex.advance() // '"'
+	isTemplate := false
+
+	for lex.rn != '"' && lex.rn != 0 {
+		if lex.rn == '\\' {
+			lex.advance().advance()
+			continue
+		}
+
+		if lex.rn == '$' && lex.peekRn() == '{' {
+			isTemplate = true
+		}
+
+		lex.advance()
+	}
+
+	if lex.rn == 0 {
+		return lex.NewToken(token.ILLEGAL) // TODO: выкинуть ошибку что нет закрывающей "
+	}
+
+	lex.advance() // '"'
+
+	if isTemplate {
+		return lex.NewToken(token.T_STRING)
+	}
+	return lex.NewToken(token.STRING)
+}
+
+func (lex *Lexer) readRawString() token.Token {
+	lex.advance() // '`'
+
+	for lex.rn != '`' && lex.rn != 0 {
+		lex.advance()
+	}
+
+	if lex.rn == 0 {
+		return lex.NewToken(token.ILLEGAL) // TODO: выкинуть ошибку что нет закрывающей `
+	}
+
+	lex.advance()
+	return lex.NewToken(token.RAW_STRING)
+}
+
+func (lex *Lexer) readChar() token.Token {
+	lex.advance() // едим открывающую одинарную кавычку '
+
+	if lex.rn == '\\' {
+		lex.advance() // едим слэш '\'
+		lex.advance() // едим сам экранируемый символ (например, 'n')
+	} else if lex.rn != '\'' && lex.rn != 0 {
+		lex.advance() // едим этот символ целиком
+	}
+
+	if lex.rn != '\'' {
+		return lex.NewToken(token.ILLEGAL)
+	}
+
+	lex.advance()
+	return lex.NewToken(token.CHARACTER)
+}
+
+func (lex *Lexer) readNumber() token.Token {
+	isFloat := false
+	isIdent := false
+
+	for unicode.IsDigit(lex.rn) || unicode.IsLetter(lex.rn) || lex.rn == '_' || lex.rn == '.' {
+
+		if lex.rn == '.' {
+			if isIdent || isFloat {
+				break
+			}
+			if !unicode.IsDigit(lex.peekRn()) {
+				break
+			}
+			isFloat = true
+		}
+
+		if unicode.IsLetter(lex.rn) || lex.rn == '_' {
+			isIdent = true
+		}
+
+		lex.advance()
+	}
+
+	literal := lex.input[lex.tokStart:lex.pos.Offset]
+
+	if isIdent {
+		if literal[len(literal)-1] == 'i' && (!isFloat || len(literal) > 2) {
+			onlyDigits := true
+			for i := 0; i < len(literal)-1; i++ {
+				if (literal[i] < '0' || literal[i] > '9') && literal[i] != '.' {
+					onlyDigits = false
+					break
+				}
+			}
+			if onlyDigits {
+				return lex.NewToken(token.IMAGINARY)
+			}
+		}
+
+		return lex.NewToken(token.IDENTIFIER)
+	}
+
+	if isFloat {
+		return lex.NewToken(token.FLOATING)
+	}
+	return lex.NewToken(token.INTEGER)
 }
 
 //
