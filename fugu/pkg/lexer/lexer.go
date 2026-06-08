@@ -21,8 +21,12 @@ type Lexer struct {
 }
 
 // для интерфейса для возможности получить Literal коректно
-func (lex *Lexer) Input() string {
-	return lex.input
+func (lex *Lexer) Input() *string {
+	return &lex.input
+}
+
+func (lex *Lexer) Report() *reporter.Reporter {
+	return lex.report
 }
 
 func (lex *Lexer) Reset() {

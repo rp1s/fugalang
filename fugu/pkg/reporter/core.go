@@ -8,12 +8,12 @@ import (
 )
 
 type Report interface {
-	Input() string
+	Input() *string
 }
 
 type Reporter struct {
 	Source Report
-	input  string
+	input  *string
 	lines  []string
 	err    chan Err
 
@@ -41,7 +41,7 @@ func New(source Report, fileName string) *Reporter {
 func (rp *Reporter) Init() {
 	if !rp.isInit.Load() {
 		rp.input = rp.Source.Input()
-		rp.lines = strings.Split(rp.input, "\n")
+		rp.lines = strings.Split(*rp.input, "\n")
 		rp.err = make(chan Err, 64)
 		rp.isInit.Store(true)
 
@@ -123,7 +123,7 @@ func (rp *Reporter) getLine(err Err) string {
 		return ""
 	}
 
-	tokenText := rp.input[err.Start:err.End]
+	tokenText := (*rp.input)[err.Start:err.End]
 	lineCount := strings.Count(tokenText, "\n")
 
 	if lineCount == 0 {

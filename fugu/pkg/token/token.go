@@ -159,25 +159,25 @@ type Position struct {
 }
 
 type OutLiteral interface {
-	Input() string
+	Input() *string
 }
 
 func (tk Token) Literal(source OutLiteral) string {
 	switch tk.Kind {
 	case STRING:
-		return source.Input()[tk.Start+1 : tk.End-1]
+		return (*source.Input())[tk.Start+1 : tk.End-1]
 	case T_STRING:
-		return source.Input()[tk.Start+1 : tk.End-1]
+		return (*source.Input())[tk.Start+1 : tk.End-1]
 	case RAW_STRING:
-		return source.Input()[tk.Start+1 : tk.End-1]
+		return (*source.Input())[tk.Start+1 : tk.End-1]
 	case CHARACTER:
-		return source.Input()[tk.Start+1 : tk.End-1]
+		return (*source.Input())[tk.Start+1 : tk.End-1]
 	case COMMENT:
-		return source.Input()[tk.Start+2 : tk.End]
+		return (*source.Input())[tk.Start+2 : tk.End]
 	case M_COMMENT:
-		return source.Input()[tk.Start+2 : tk.End-2]
+		return (*source.Input())[tk.Start+2 : tk.End-2]
 	default:
-		return source.Input()[tk.Start:tk.End]
+		return (*source.Input())[tk.Start:tk.End]
 	}
 }
 
