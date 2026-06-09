@@ -161,7 +161,7 @@ func TestLiteral(t *testing.T) {
 	}{
 		{name: "Идентификатор начинающийся числом", input: "10pixel", expectedKind: token.IDENTIFIER, expectedLiteral: "10pixel"},
 		{name: "Идентификатор с цифрами и подчёркиванием", input: "2stack", expectedKind: token.IDENTIFIER, expectedLiteral: "2stack"},
-		{name: "Обычный идентификатор с подчёркивания", input: "_init__", expectedKind: token.IDENTIFIER, expectedLiteral: "__init__"},
+		{name: "Обычный идентификатор с подчёркивания", input: "__init__", expectedKind: token.IDENTIFIER, expectedLiteral: "__init__"},
 
 		{name: "Ключевое слово module", input: "module", expectedKind: token.MODULE, expectedLiteral: "module"},
 		{name: "Ключевое слово fn", input: "fn", expectedKind: token.FN, expectedLiteral: "fn"},
