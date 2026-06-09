@@ -456,6 +456,10 @@ func (lex *Lexer) stabilization() {
 		"SWITCH": true,
 		"CASE":   true,
 		"RETURN": true,
+		"ENUM":   true,
+		"SELECT": true,
+		"SUNC":   true,
+		"UNSAFE": true,
 	}
 
 	for {
@@ -467,6 +471,9 @@ func (lex *Lexer) stabilization() {
 		} else if tk.Kind == token.SPACING || tk.Kind == token.COMMENT || tk.Kind == token.M_COMMENT {
 			continue
 		} else if tkws[tk.Kind.String()] {
+			lex.unfreeze()
+			return
+		} else if tk.Kind == token.R_BRACE || tk.Kind == token.END {
 			lex.unfreeze()
 			return
 		}

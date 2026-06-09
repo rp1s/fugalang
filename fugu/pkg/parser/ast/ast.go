@@ -3,39 +3,42 @@ package ast
 import "fugu/pkg/token"
 
 //
-//
-// Expressions - Выражения
-// Statements - Инструкции
-// Declarations - Объявления
-//
+// Справка:
+// Expressions - Выражения (значение, которое вычисляется и возвращает результат)
+// Statements - Инструкции (действие, которое что-то делает, но не возвращает значение)
+// Declarations - Объявления (создание новой сущности: переменную, функцию)
 //
 
 type Node interface {
-	Literal(source token.OutLiteral) string
+	Node()
 }
 
 type Statement interface {
 	Node
-	stmt()
+	Stmt()
 }
 
 type Expression interface {
 	Node
-	expr()
+	Expr()
 }
 
 type Declaration interface {
 	Node
-	decl()
+	Decl()
 }
 
 type Program struct {
 	Declaration []Declaration
 }
 
-func (p *Program) Literal(source token.OutLiteral) string {
-	if len(p.Declaration) > 0 {
-		return p.Declaration[0].Literal(source)
-	}
-	return ""
+type Identifier struct {
+	Token token.Token
+}
+
+// struct Box<T> { value: T }
+type GenericParam struct {
+	Token      token.Token // token.IDENTIFIER
+	Name       *Identifier // имя параметра (T)
+	Constraint Expression  // ограничение (опционально)
 }
