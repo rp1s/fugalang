@@ -17,7 +17,18 @@ type Lexer struct {
 	tokStartColumn int // номер колонки начала токена
 	pos            token.Position
 
-	report *reporter.Reporter
+	savePoint saveLexer
+	report    *reporter.Reporter
+}
+
+type saveLexer struct {
+	rn rune // текущая rune
+
+	curPos         int // абсолютное смещение c начала файла
+	tokStart       int // абсолютное смещение до начала токена который разбираеться прямо сейчас
+	tokStartLine   int // номер строки начала токена
+	tokStartColumn int // номер колонки начала токена
+	pos            token.Position
 }
 
 // для интерфейса для возможности получить Literal коректно
@@ -281,8 +292,7 @@ func (lex *Lexer) NextToken() token.Token {
 }
 
 func (lex *Lexer) readLineComment() token.Token {
-	// Пропускаем '//'
-	lex.advance().advance()
+	lex.advance().advance() // '//'
 
 	// останавливаемся перед '\n'
 	for lex.rn != '\n' && lex.rn != 0 {
@@ -293,13 +303,16 @@ func (lex *Lexer) readLineComment() token.Token {
 }
 
 func (lex *Lexer) readMultiLineComment() token.Token {
-	// пропуск '/*'
-	lex.advance().advance()
+	lex.advance().advance() // '/*'
+
+	lex.freezing()
 
 	for {
 		if lex.rn == 0 {
 			tk := lex.NewToken(token.ILLEGAL)
 			lex.report.SendTk(reporter.LexerNoClosing, tk)
+			lex.unfreeze()
+			lex.stabilization()
 			return tk
 		}
 
@@ -318,6 +331,8 @@ func (lex *Lexer) readString() token.Token {
 	lex.advance() // '"'
 	isTemplate := false
 
+	lex.freezing()
+
 	for lex.rn != '"' && lex.rn != 0 {
 		if lex.rn == '\\' {
 			lex.advance().advance()
@@ -334,6 +349,8 @@ func (lex *Lexer) readString() token.Token {
 	if lex.rn == 0 {
 		tk := lex.NewToken(token.ILLEGAL)
 		lex.report.SendTk(reporter.LexerNoClosing, tk)
+		lex.unfreeze()
+		lex.stabilization()
 		return tk
 	}
 
@@ -348,6 +365,8 @@ func (lex *Lexer) readString() token.Token {
 func (lex *Lexer) readRawString() token.Token {
 	lex.advance() // '`'
 
+	lex.freezing()
+
 	for lex.rn != '`' && lex.rn != 0 {
 		lex.advance()
 	}
@@ -355,6 +374,8 @@ func (lex *Lexer) readRawString() token.Token {
 	if lex.rn == 0 {
 		tk := lex.NewToken(token.ILLEGAL)
 		lex.report.SendTk(reporter.LexerNoClosing, tk)
+		lex.unfreeze()
+		lex.stabilization()
 		return tk
 	}
 
@@ -363,13 +384,12 @@ func (lex *Lexer) readRawString() token.Token {
 }
 
 func (lex *Lexer) readChar() token.Token {
-	lex.advance() // едим открывающую одинарную кавычку '
+	lex.advance()
 
 	if lex.rn == '\\' {
-		lex.advance() // едим слэш '\'
-		lex.advance() // едим сам экранируемый символ (например, 'n')
+		lex.advance().advance()
 	} else if lex.rn != '\'' && lex.rn != 0 {
-		lex.advance() // едим этот символ целиком
+		lex.advance()
 	}
 
 	if lex.rn != '\'' {
@@ -428,6 +448,31 @@ func (lex *Lexer) readNumber() token.Token {
 	return lex.NewToken(token.INTEGER)
 }
 
+func (lex *Lexer) stabilization() {
+	tkws := map[string]bool{
+		"FN":     true,
+		"IF":     true,
+		"ELSE":   true,
+		"SWITCH": true,
+		"CASE":   true,
+		"RETURN": true,
+	}
+
+	for {
+		lex.freezing()
+		tk := lex.NextToken()
+
+		if tk.Kind == token.EOF {
+			return
+		} else if tk.Kind == token.SPACING || tk.Kind == token.COMMENT || tk.Kind == token.M_COMMENT {
+			continue
+		} else if tkws[tk.Kind.String()] {
+			lex.unfreeze()
+			return
+		}
+	}
+}
+
 //
 // вспомогательный функционал
 //
@@ -478,4 +523,24 @@ func (lex *Lexer) NewToken(kind token.TokenKind) token.Token {
 		Start: lex.tokStart,
 		End:   lex.pos.Offset,
 	}
+}
+
+func (lex *Lexer) freezing() {
+	lex.savePoint = saveLexer{
+		rn:             lex.rn,
+		curPos:         lex.curPos,
+		tokStart:       lex.tokStart,
+		tokStartLine:   lex.tokStartLine,
+		tokStartColumn: lex.tokStartColumn,
+		pos:            lex.pos,
+	}
+}
+
+func (lex *Lexer) unfreeze() {
+	lex.rn = lex.savePoint.rn
+	lex.curPos = lex.savePoint.curPos
+	lex.tokStart = lex.savePoint.tokStart
+	lex.tokStartLine = lex.savePoint.tokStartLine
+	lex.tokStartColumn = lex.savePoint.tokStartColumn
+	lex.pos = lex.savePoint.pos
 }

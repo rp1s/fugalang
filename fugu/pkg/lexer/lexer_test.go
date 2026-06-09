@@ -195,3 +195,44 @@ func TestLiteral(t *testing.T) {
 		}
 	}
 }
+
+func TestLexerStabilization(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        string
+		expectedKind token.TokenKind
+	}{
+		{
+			name:         "cтабилизация после незакрытого многострочного комментария",
+			input:        "/* незакрытый комментарий \n fn main() {}",
+			expectedKind: token.FN,
+		},
+		{
+			name: "cтабилизация после незакрытой обычной строки",
+			input: `"незакрытая строка
+if x == 5 {}`,
+			expectedKind: token.IF,
+		},
+		{
+			name:         "cтабилизация после незакрытой сырой строки",
+			input:        "`незакрытая сырая строка \n else { return }",
+			expectedKind: token.ELSE,
+		},
+	}
+
+	for _, tt := range tests {
+		l := New(tt.input, "main.fg")
+
+		firstTok := l.NextToken()
+		if firstTok.Kind != token.ILLEGAL {
+			t.Fatalf("[%s] Первый токен обязан быть ILLEGAL. Получен: %s", tt.name, firstTok.Kind.String())
+		}
+
+		secondTok := l.NextToken()
+		if secondTok.Kind != tt.expectedKind {
+			t.Errorf("[%s] Неверный тип токена после стабилизации. Ожидался: %s, получен: %s",
+				tt.name, tt.expectedKind.String(), secondTok.Kind.String())
+		}
+
+	}
+}

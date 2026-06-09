@@ -1,7 +1,7 @@
 package reporter
 
 import (
-	lexer "fugu/pkg/Lexer"
+	"fugu/pkg/lexer"
 	"fugu/pkg/reporter"
 	"fugu/pkg/token"
 	"testing"
