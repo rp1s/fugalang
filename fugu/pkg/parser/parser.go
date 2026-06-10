@@ -18,7 +18,7 @@ type Parser struct {
 	pos int
 }
 
-func New(input, fileName string) *Parser {
+func New(input []byte, fileName string) *Parser {
 	lex := lexer.New(input, fileName)
 
 	pars := &Parser{

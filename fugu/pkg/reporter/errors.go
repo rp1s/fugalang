@@ -3,7 +3,8 @@ package reporter
 type Code uint16
 
 const (
-	TestError Code = iota
+	NoError Code = iota
+	TestError
 
 	// NoClosing
 	LexerNoClosing // не закрыт блок и тд
@@ -12,17 +13,26 @@ const (
 // TODO: надо будет очев сделать чтобы возвращал или на англ или на ру
 func (c Code) String() string {
 	switch c {
+	case NoError:
+		return "нету"
 	case TestError:
-		return "тестовая ошибка"
+		return "тестовая"
 	case LexerNoClosing:
 		return "пропущен закрывающий символ"
 	default:
-		return "неизвестная ошибка"
+		return "неизвестная"
 	}
 }
 
 func (c Code) Notes() []string {
 	switch c {
+	case NoError:
+		return []string{
+			"Ой, кажется, я сломался изнутри! Этого не должно было быть напечатано.",
+			"Пожалуйста, создайте баг-репорт:",
+			"  https://github.com/fugalang/fugu/issues",
+			"Если вам не трудно, опишите в репорте сценарий, при котором вы обнаружили это недоразумение.",
+		}
 	case TestError:
 		return []string{
 			"Ой, кажется, я сломался изнутри! Это внутренняя отладочная ошибка.",
@@ -41,6 +51,8 @@ func (c Code) Notes() []string {
 
 func (c Code) Code() string {
 	switch c {
+	case NoError:
+		return "NOERR"
 	case TestError:
 		return "TEST"
 	case LexerNoClosing:
@@ -52,6 +64,8 @@ func (c Code) Code() string {
 
 func (c Code) Arrow() string {
 	switch c {
+	case NoError:
+		return ""
 	case TestError:
 		return ""
 	case LexerNoClosing:
