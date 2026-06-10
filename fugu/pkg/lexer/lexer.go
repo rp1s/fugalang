@@ -8,7 +8,7 @@ import (
 )
 
 type Lexer struct {
-	input string
+	input []byte
 	rn    rune // текущая rune
 
 	curPos         int // абсолютное смещение c начала файла
@@ -32,7 +32,7 @@ type saveLexer struct {
 }
 
 // для интерфейса для возможности получить Literal коректно
-func (lex *Lexer) Input() *string {
+func (lex *Lexer) Input() *[]byte {
 	return &lex.input
 }
 
@@ -44,7 +44,7 @@ func (lex *Lexer) Reset() {
 	lex = New(lex.input, lex.pos.FileName)
 }
 
-func New(input, fileName string) *Lexer {
+func New(input []byte, fileName string) *Lexer {
 	lex := &Lexer{
 		input:  input,
 		curPos: 0,
@@ -103,6 +103,9 @@ func (lex *Lexer) NextToken() token.Token {
 			} else if lex.peekRn() == '<' {
 				lex.advance().advance()
 				return lex.NewToken(token.RANGE_HALF_OPEN)
+			} else if lex.peekRn() == '.' {
+				lex.advance().advance()
+				return lex.NewToken(token.OP_ARRAY)
 			}
 			lex.advance()
 			return lex.NewToken(token.OP_RANGE)
@@ -136,6 +139,9 @@ func (lex *Lexer) NextToken() token.Token {
 		if lex.peekRn() == '=' {
 			lex.advance().advance()
 			return lex.NewToken(token.A_DECREASE)
+		} else if lex.peekRn() == '>' {
+			lex.advance().advance()
+			return lex.NewToken(token.OP_RETURN)
 		}
 
 		lex.advance()
@@ -491,7 +497,7 @@ func (lex *Lexer) advance() *Lexer {
 		return lex
 	}
 
-	r, size := utf8.DecodeRuneInString(lex.input[lex.curPos:])
+	r, size := utf8.DecodeRune(lex.input[lex.curPos:])
 
 	lex.rn = r
 	lex.pos.Offset = lex.curPos
@@ -513,7 +519,7 @@ func (lex *Lexer) peekRn() rune {
 		return 0
 	}
 
-	r, _ := utf8.DecodeRuneInString(lex.input[lex.curPos:])
+	r, _ := utf8.DecodeRune(lex.input[lex.curPos:])
 
 	return r
 }

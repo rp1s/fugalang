@@ -35,10 +35,3 @@ type Program struct {
 type Identifier struct {
 	Token token.Token
 }
-
-// struct Box<T> { value: T }
-type GenericParam struct {
-	Token      token.Token // token.IDENTIFIER
-	Name       *Identifier // имя параметра (T)
-	Constraint Expression  // ограничение (опционально)
-}
