@@ -9,7 +9,7 @@ import (
 
 // этот тест не имеет смысл я просто хотел посмотреть как работает вывод ошибок )
 func TestWorkReporter(t *testing.T) {
-	input := "let a: mut string"
+	input := []byte("let a: mut string")
 	lex := lexer.New(input, "main.fg")
 
 	tk := lex.NextToken()

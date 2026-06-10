@@ -1,6 +1,7 @@
 package reporter
 
 import (
+	"bytes"
 	"fmt"
 	"fugu/pkg/token"
 	"strings"
@@ -8,16 +9,17 @@ import (
 )
 
 type Report interface {
-	Input() *string
+	Input() *[]byte
 }
 
 type Reporter struct {
 	Source  Report
-	input   *string
-	lines   []string
+	lines   [][]byte
 	err     chan Err
 	isInit  atomic.Bool
 	isClose atomic.Bool
+
+	IsUse bool // чтобы знать были ли ошибки на прошлом этапе
 }
 
 type Msg interface {
@@ -48,8 +50,7 @@ func New(source Report, fileName string) *Reporter {
 
 func (rp *Reporter) Init() {
 	if !rp.isInit.Load() {
-		rp.input = rp.Source.Input()
-		rp.lines = strings.Split(*rp.input, "\n")
+		rp.lines = SplitLines(*rp.Source.Input())
 		rp.err = make(chan Err, 64)
 		rp.isInit.Store(true)
 		go rp.outputer()
@@ -68,6 +69,9 @@ func (rp *Reporter) Close() {
 }
 
 func (rp *Reporter) Send(err Err) {
+	if !rp.IsUse {
+		rp.IsUse = true
+	}
 	if !rp.isClose.Load() {
 		rp.err <- err
 	} else {
@@ -109,9 +113,9 @@ func (rp *Reporter) print(err Err) {
 
 	maxLine := err.Pos.Line
 	rawLines := rp.getLine(err)
-	var errorLines []string
-	if rawLines != "" {
-		errorLines = strings.Split(rawLines, "\n")
+	var errorLines [][]byte
+	if rawLines != nil {
+		errorLines = SplitLines(rawLines)
 		maxLine = err.Pos.Line + len(errorLines) - 1
 	}
 
@@ -122,7 +126,7 @@ func (rp *Reporter) print(err Err) {
 
 	emptyPrefix := fmt.Sprintf("%s%s ", strings.Repeat(" ", width), Gray("|"))
 
-	if rawLines == "" {
+	if rawLines == nil {
 		fmt.Printf("%s%s \n", Gray(fmt.Sprintf("%*d", width, err.Pos.Line)), Gray("|"))
 		prefixLen := width + 2
 		padding := strings.Repeat(" ", prefixLen+(err.Pos.Column-1))
@@ -160,22 +164,30 @@ func (rp *Reporter) print(err Err) {
 	fmt.Println()
 }
 
-func (rp *Reporter) getLine(err Err) string {
-	if err.Pos.Line-1 < 0 || err.Pos.Line-1 >= len(rp.lines) {
-		return ""
+func (rp *Reporter) getLine(err Err) []byte {
+	lineIdx := err.Pos.Line - 1
+	if lineIdx < 0 || lineIdx >= len(rp.lines) {
+		return []byte{}
 	}
 
-	tokenText := (*rp.input)[err.Start:err.End]
-	lineCount := strings.Count(tokenText, "\n")
-
-	if lineCount == 0 {
-		return rp.lines[err.Pos.Line-1]
+	tokenText := (*rp.Source.Input())[err.Start:err.End]
+	if !bytes.Contains(tokenText, []byte{'\n'}) {
+		return rp.lines[lineIdx]
 	}
 
-	endLine := err.Pos.Line - 1 + lineCount
+	lineCount := bytes.Count(tokenText, []byte{'\n'})
+
+	endLine := lineIdx + lineCount
 	if endLine >= len(rp.lines) {
 		endLine = len(rp.lines) - 1
 	}
 
-	return strings.Join(rp.lines[err.Pos.Line-1:endLine+1], "\n")
+	return bytes.Join(rp.lines[lineIdx:endLine+1], []byte{'\n'})
+}
+
+func SplitLines(data []byte) [][]byte {
+	if len(data) == 0 {
+		return nil
+	}
+	return bytes.Split(data, []byte{'\n'})
 }

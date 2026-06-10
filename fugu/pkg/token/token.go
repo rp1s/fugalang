@@ -118,9 +118,11 @@ const (
 	OP_RANGE        // ..   (Исключающий / Открытый)
 	RANGE_INCL      // ..=  (Включающий / Закрытый)
 	RANGE_HALF_OPEN // ..<  (Полуоткрытый)
+	OP_ARRAY        // ...
 
 	// операторы управления данных
 	GOES_OVER //  =>
+	OP_RETURN // ->
 	PIPE      // |>
 	DEFAULT   // ?:
 	SAFE_DOT  // ?.
@@ -159,10 +161,10 @@ type Position struct {
 }
 
 type OutLiteral interface {
-	Input() *string
+	Input() *[]byte
 }
 
-func (tk Token) Literal(source OutLiteral) string {
+func (tk Token) Literal(source OutLiteral) []byte {
 	switch tk.Kind {
 	case STRING:
 		return (*source.Input())[tk.Start+1 : tk.End-1]
@@ -238,8 +240,8 @@ var keywords = map[string]TokenKind{
 
 // проверяет является ли строка ключевым словом.
 // Если да возвращает его тип, если нет возвращает простой IDENTIFIER.
-func SearchKeyword(ident string) TokenKind {
-	if kind, ok := keywords[ident]; ok {
+func SearchKeyword(ident []byte) TokenKind {
+	if kind, ok := keywords[string(ident)]; ok {
 		return kind
 	}
 	return IDENTIFIER
