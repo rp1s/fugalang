@@ -52,13 +52,13 @@ func (c Code) Notes() []string {
 func (c Code) Code() string {
 	switch c {
 	case NoError:
-		return "NOERR"
+		return "NoError"
 	case TestError:
-		return "TEST"
+		return "TestError"
 	case LexerNoClosing:
-		return "LNC1"
+		return "LexerNoClosing"
 	default:
-		return "I!K"
+		return "NoError"
 	}
 }
 
