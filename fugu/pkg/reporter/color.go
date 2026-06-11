@@ -3,15 +3,17 @@ package reporter
 const (
 	ansiReset = "\033[0m"
 
-	ansiBlack   = "\033[0;30m"
-	ansiRed     = "\033[0;31m"
-	ansiGreen   = "\033[0;32m"
-	ansiYellow  = "\033[0;33m"
-	ansiBlue    = "\033[0;34m"
-	ansiMagenta = "\033[0;35m"
-	ansiCyan    = "\033[0;36m"
-	ansiWhite   = "\033[0;37m"
-	ansiGray    = "\033[90m"
+	ansiBlack           = "\033[0;30m"
+	ansiRed             = "\033[0;31m"
+	ansiGreen           = "\033[0;32m"
+	ansiYellow          = "\033[0;33m"
+	ansiBlue            = "\033[0;34m"
+	ansiMagenta         = "\033[0;35m"
+	ansiCyan            = "\033[0;36m"
+	ansiWhite           = "\033[0;37m"
+	ansiGray            = "\033[90m"
+	ansiPastelYellow    = "\033[38;2;255;245;150m"
+	ansi256PastelYellow = "\033[38;5;229m"
 
 	ansiBoldBlack   = "\033[1;30m"
 	ansiBoldRed     = "\033[1;31m"
@@ -55,3 +57,6 @@ func ErrorLabel(s string) string   { return ansiBoldRed + s + ansiReset }
 func WarningLabel(s string) string { return ansiBoldYellow + s + ansiReset }
 func NoteLabel(s string) string    { return ansiBoldBlue + s + ansiReset }
 func Highlight(s string) string    { return ansiUnderline + ansiBold + s + ansiReset }
+
+func PastelYellow(s string) string    { return ansiPastelYellow + s + ansiReset }
+func PastelYellow256(s string) string { return ansi256PastelYellow + s + ansiReset }

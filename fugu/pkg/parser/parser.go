@@ -27,6 +27,9 @@ func New(input []byte, fileName string) *Parser {
 		lex: lex,
 	}
 	pars.report = pars.lex.Report()
+	if pars.report.IsUse {
+		return nil
+	}
 
 	pars.advance().advance()
 	if pars.curToken.Kind == token.EOF {

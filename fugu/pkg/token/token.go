@@ -10,6 +10,11 @@ const (
 	SPACING             // whitespace
 	EOF
 
+	// Группы
+	GNUMBER
+	GSTRING
+	GARITHMETIC
+
 	literals_start
 
 	INTEGER    // 123
@@ -80,6 +85,14 @@ const (
 	keyword_end
 	operator_start
 
+	// операторы группировки
+	L_PAREN // (
+	R_PAREN // )
+	L_BRACE // {
+	R_BRACE // }
+	L_BRACK // [
+	R_BRACK // ]
+
 	// операторы присваевания
 	APPROPRIATE  // :=
 	REDEFINITION // =
@@ -128,14 +141,6 @@ const (
 	SAFE_DOT  // ?.
 	TAKE_LINK // &
 
-	// операторы группировки
-	L_PAREN // (
-	R_PAREN // )
-	L_BRACE // {
-	R_BRACE // }
-	L_BRACK // [
-	R_BRACK // ]
-
 	// операторы разделения
 	COLON // :
 	END   // ;
@@ -143,11 +148,6 @@ const (
 	DOT   // .
 
 	operator_end
-
-	// Группы
-	GNUMBER
-	GSTRING
-	GARITHMETIC
 
 	EndToken
 )

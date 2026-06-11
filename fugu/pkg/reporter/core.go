@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"fugu/pkg/token"
 	"strings"
+	"sync"
 	"sync/atomic"
 )
 
@@ -20,24 +21,28 @@ type Reporter struct {
 	isClose atomic.Bool
 
 	IsUse bool // чтобы знать были ли ошибки на прошлом этапе
+
+	wg sync.WaitGroup
 }
 
 type Msg interface {
 	Code() string
-	String() string
+	Msg() string
 	Notes() []string
 	Arrow() string
+	IsUseBlock() bool
 }
 
 type Err struct {
-	Code     Msg
-	FileName string
-	Msg      Msg
-	ArrowMsg Msg
-	Start    int
-	End      int
-	Pos      token.Position
-	Notes    Msg
+	Code       string
+	FileName   string
+	Msg        string
+	ArrowMsg   string
+	Start      int
+	End        int
+	Pos        token.Position
+	Notes      []string
+	IsUseBlock bool
 }
 
 func New(source Report, fileName string) *Reporter {
@@ -53,6 +58,7 @@ func (rp *Reporter) Init() {
 		rp.lines = SplitLines(*rp.Source.Input())
 		rp.err = make(chan Err, 64)
 		rp.isInit.Store(true)
+		rp.wg.Add(1)
 		go rp.outputer()
 	} else {
 		panic("Cannot initialize twice")
@@ -63,6 +69,7 @@ func (rp *Reporter) Close() {
 	if !rp.isClose.Load() {
 		rp.isClose.Store(true)
 		close(rp.err)
+		rp.wg.Wait()
 	} else {
 		panic("Cant close it twice")
 	}
@@ -81,108 +88,145 @@ func (rp *Reporter) Send(err Err) {
 
 func (rp *Reporter) SendTk(msg Msg, tk token.Token) {
 	rp.Send(Err{
-		Code:     msg,
-		FileName: tk.Pos.FileName,
-		Msg:      msg,
-		ArrowMsg: msg,
-		Notes:    msg,
-		Start:    tk.Start,
-		End:      tk.End,
-		Pos:      tk.Pos,
+		Code:       msg.Code(),
+		FileName:   tk.Pos.FileName,
+		Msg:        msg.Msg(),
+		ArrowMsg:   msg.Arrow(),
+		Notes:      msg.Notes(),
+		IsUseBlock: msg.IsUseBlock(),
+		Start:      tk.Start,
+		End:        tk.End,
+		Pos:        tk.Pos,
 	})
 }
 
 func (rp *Reporter) outputer() {
+	defer rp.wg.Done()
 	for err := range rp.err {
-		rp.print(err)
+		fmt.Println(rp.buildMsg(err).String())
 	}
 }
 
-func (rp *Reporter) print(err Err) {
+func (rp *Reporter) buildMsg(err Err) *strings.Builder {
+	var out *strings.Builder
+
 	label := "error"
-	if err.Code.Code() != "" {
-		label = fmt.Sprintf("error[%s]", err.Code.Code())
+	if err.Code != "" {
+		label = fmt.Sprintf("error[%s]", err.Code)
 	}
-	fmt.Printf("%s: %s\n", BoldRed(label), err.Msg.String())
-	fmt.Printf("%s %s:%d:%d\n", BoldCyan("  -->"), err.FileName, err.Pos.Line, err.Pos.Column)
+	out.WriteString(fmt.Sprintf("%s: %s\n", BoldRed(label), err.Msg))
+	out.WriteString(fmt.Sprintf("%s %s:%d:%d\n", BoldYellow(" -->"), err.FileName, err.Pos.Line, err.Pos.Column))
 
-	arrowsLen := err.End - err.Start
-	if arrowsLen <= 0 {
-		arrowsLen = 1
-	}
+	if err.IsUseBlock {
+		arrowLen := err.End - err.Start
+		if arrowLen <= 0 {
+			arrowLen = 1
+		}
+		rawLines := rp.getLine(err)
 
-	maxLine := err.Pos.Line
-	rawLines := rp.getLine(err)
-	var errorLines [][]byte
-	if rawLines != nil {
-		errorLines = SplitLines(rawLines)
-		maxLine = err.Pos.Line + len(errorLines) - 1
-	}
+		maxLine := err.Pos.Line
+		width := len(fmt.Sprintf("%d", maxLine))
+		if width < 2 {
+			width = 2
+		}
 
-	width := len(fmt.Sprintf("%d", maxLine))
-	if width < 2 {
-		width = 2
-	}
-
-	emptyPrefix := fmt.Sprintf("%s%s ", strings.Repeat(" ", width), Gray("|"))
-
-	if rawLines == nil {
-		fmt.Printf("%s%s \n", Gray(fmt.Sprintf("%*d", width, err.Pos.Line)), Gray("|"))
-		prefixLen := width + 2
-		padding := strings.Repeat(" ", prefixLen+(err.Pos.Column-1))
-		if err.ArrowMsg.Arrow() != "" {
-			fmt.Printf("%s%s %s\n", padding, BoldRed(strings.Repeat("^", arrowsLen)), BoldRed(err.ArrowMsg.Arrow()))
+		if len(rawLines) == 0 {
+			out.WriteString(fmt.Sprintf("%s%s \n", Gray(fmt.Sprintf("%*d", width, err.Pos.Line)), Gray("|")))
+			padding := strings.Repeat(" ", width+3+(err.Pos.Column-1))
+			if err.ArrowMsg != "" {
+				out.WriteString(fmt.Sprintf("%s%s %s\n", padding, BoldRed(strings.Repeat("^", arrowLen)), BoldRed(err.ArrowMsg)))
+			} else {
+				out.WriteString(fmt.Sprintf("%s%s\n", padding, BoldRed(strings.Repeat("^", arrowLen))))
+			}
 		} else {
-			fmt.Printf("%s%s\n", padding, BoldRed(strings.Repeat("^", arrowsLen)))
-		}
-	} else {
-		fmt.Println(emptyPrefix)
-		for i, line := range errorLines {
-			fmt.Printf("%s%s %s\n", Gray(fmt.Sprintf("%*d", width, err.Pos.Line+i)), Gray("|"), line)
-		}
-		if len(errorLines) > 1 {
-			arrowsLen = len(errorLines) - (err.Pos.Column - 1)
-			if arrowsLen <= 0 {
-				arrowsLen = 1
+			prefix := fmt.Sprintf("%s%s ", strings.Repeat(" ", width), Gray("|"))
+			out.WriteString(prefix + "\n")
+
+			startLineNum := err.Pos.Line - len(rawLines) + 1
+			if err.Pos.Line <= len(rawLines) {
+				startLineNum = 1
+			}
+
+			var targetLine []byte
+
+			for i, line := range rawLines {
+				lineNum := startLineNum + i
+				if lineNum == err.Pos.Line {
+					targetLine = line
+				}
+				out.WriteString(fmt.Sprintf("%s%s %s\n", Gray(fmt.Sprintf("%*d", width, lineNum)), Gray("|"), string(line)))
+			}
+
+			lineStrPrefix := fmt.Sprintf("%*d| ", width, err.Pos.Line)
+			basePadding := len(lineStrPrefix)
+
+			// символы перед целевой линией
+			cbtl := 0
+			for i := 0; i < err.Pos.Line-1 && i < len(rp.lines); i++ {
+				cbtl += len(rp.lines[i]) + 1
+			}
+
+			//  bbtl - байты перед токеном в строке
+			bbtl := err.Start - cbtl
+			if bbtl < 0 {
+				bbtl = 0
+			}
+			if bbtl > len(targetLine) {
+				bbtl = len(targetLine)
+			}
+
+			prefixBytes := targetLine[:bbtl]
+			prefixRunes := []rune(string(prefixBytes))
+
+			codePadding := 0
+			for _, r := range prefixRunes {
+				if r == '\t' {
+					codePadding += 4
+				} else {
+					codePadding += 1
+				}
+			}
+
+			padding := strings.Repeat(" ", basePadding+codePadding)
+
+			if err.ArrowMsg != "" {
+				out.WriteString(fmt.Sprintf("%s%s %s\n", padding, BoldRed(strings.Repeat("^", arrowLen)), BoldRed(err.ArrowMsg)))
+			} else {
+				out.WriteString(fmt.Sprintf("%s%s\n", padding, BoldRed(strings.Repeat("^", arrowLen))))
 			}
 		}
-		prefixLen := width + 2
-		padding := strings.Repeat(" ", prefixLen+(err.Pos.Column-1))
-		if err.ArrowMsg.Arrow() != "" {
-			fmt.Printf("%s%s %s\n", padding, BoldRed(strings.Repeat("^", arrowsLen)), BoldRed(err.ArrowMsg.Arrow()))
-		} else {
-			fmt.Printf("%s%s\n", padding, BoldRed(strings.Repeat("^", arrowsLen)))
+	}
+	if len(err.Notes) > 0 {
+		width := 4
+		for _, note := range err.Notes {
+			out.WriteString(fmt.Sprintf("%s%s %s\n", strings.Repeat(" ", width), BoldGreen("="), note))
 		}
 	}
+	out.WriteString("\n")
 
-	if len(err.Notes.Notes()) > 0 {
-		fmt.Println(emptyPrefix)
-		for _, note := range err.Notes.Notes() {
-			fmt.Printf("%s%s %s\n", strings.Repeat(" ", width), BoldCyan("="), note)
-		}
-	}
-	fmt.Println()
+	return out
 }
 
-func (rp *Reporter) getLine(err Err) []byte {
-	lineIdx := err.Pos.Line - 1
-	if lineIdx < 0 || lineIdx >= len(rp.lines) {
-		return []byte{}
+func (rp *Reporter) getLine(err Err) [][]byte {
+	if len(rp.lines) == 0 {
+		return nil
 	}
-
-	tokenText := (*rp.Source.Input())[err.Start:err.End]
-	if !bytes.Contains(tokenText, []byte{'\n'}) {
-		return rp.lines[lineIdx]
+	lidx := err.Pos.Line - 1
+	if lidx < 0 || lidx >= len(rp.lines) {
+		return nil
 	}
-
-	lineCount := bytes.Count(tokenText, []byte{'\n'})
-
-	endLine := lineIdx + lineCount
-	if endLine >= len(rp.lines) {
-		endLine = len(rp.lines) - 1
+	start := lidx - 3
+	if start < 0 {
+		start = 0
 	}
-
-	return bytes.Join(rp.lines[lineIdx:endLine+1], []byte{'\n'})
+	end := lidx + 1
+	if end > len(rp.lines) {
+		end = len(rp.lines)
+	}
+	if start >= end {
+		return nil
+	}
+	return rp.lines[start:end]
 }
 
 func SplitLines(data []byte) [][]byte {

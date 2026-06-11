@@ -11,16 +11,16 @@ const (
 )
 
 // TODO: надо будет очев сделать чтобы возвращал или на англ или на ру
-func (c Code) String() string {
+func (c Code) Msg() string {
 	switch c {
 	case NoError:
-		return "нету"
+		return "не найденна"
 	case TestError:
-		return "тестовая"
+		return "тестовая ошибка"
 	case LexerNoClosing:
 		return "пропущен закрывающий символ"
 	default:
-		return "неизвестная"
+		return "неизвестная ошибка"
 	}
 }
 
@@ -43,7 +43,7 @@ func (c Code) Notes() []string {
 		}
 
 	case LexerNoClosing:
-		return []string{""}
+		return []string{}
 	default:
 		return []string{}
 	}
@@ -72,5 +72,14 @@ func (c Code) Arrow() string {
 		return "закрой за собой!"
 	default:
 		return ""
+	}
+}
+
+func (c Code) IsUseBlock() bool {
+	switch c {
+	case NoError:
+		return false
+	default:
+		return true
 	}
 }
