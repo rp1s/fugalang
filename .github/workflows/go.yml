@@ -22,6 +22,7 @@ jobs:
       run: |
         cd fugu
         go mod download
+        go generate ./pkg/parse/actionr
         go build -v ./...
 
     - name: Test
