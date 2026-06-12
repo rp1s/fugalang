@@ -1,10 +1,12 @@
 package action
 
 import (
+	"fugu/pkg/token"
 	"testing"
+
+	"github.com/k0kubun/pp/v3"
 )
 
-func TestBuidOpSlice(t *testing.T) {
-	tb := BuildActionSlice(ActionSrc)
-	_ = tb
+func TestActionMap(t *testing.T) {
+	pp.Println(Action(1, token.GARITHMETIC))
 }

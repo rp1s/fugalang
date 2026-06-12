@@ -13,9 +13,8 @@ const (
 	// Группы
 	GNUMBER
 	GSTRING
+	GLITERAL
 	GARITHMETIC
-
-	literals_start
 
 	INTEGER    // 123
 	IMAGINARY  // 123i
@@ -25,9 +24,6 @@ const (
 	RAW_STRING // `abc`
 	CHARACTER  // 'a'
 	IDENTIFIER // myVar
-
-	literals_end
-	keyword_start
 
 	// ключевые слова объявления модулей и использования
 	MODULE
@@ -60,32 +56,35 @@ const (
 	BREAK
 
 	// управление выполнением
+
 	DEFER  // Отложенный вызов функции перед выходом из области видимости
 	SELECT // Ожидание первого готового события из каналов/корутин
 
 	// корутины
+
 	ASYNC // Объявление асинхронной функции или блока
 	AWAIT // Ожидание завершения асинхронной операции
 	YIELD // Возврат промежуточного значения из генератора
 
 	// нативные потоки
+
 	SPAWN // Запуск функции в отдельном системном потоке ОС
 
 	// групповое управление
+
 	SYNC // Создание изолированной области для группы задач
 	WAIT // Ожидание завершения ВСЕХ задач в текущем контексте
 	HALT // Безопасная экстренная остановка ВСЕХ задач группы
 
 	// низкоуровневые операции
+
 	CLANG  // вставка C кода
 	EXPORT // подключение внешней функции из динамической библиотеки
 	EXTERN // объявление внешней функции без реализации (FFI)
 	UNSAFE // блок небезопасного кода, требующий явного разрешения
 
-	keyword_end
-	operator_start
-
 	// операторы группировки
+
 	L_PAREN // (
 	R_PAREN // )
 	L_BRACE // {
@@ -94,6 +93,7 @@ const (
 	R_BRACK // ]
 
 	// операторы присваевания
+
 	APPROPRIATE  // :=
 	REDEFINITION // =
 	A_DECREASE   // -=
@@ -104,6 +104,7 @@ const (
 	A_DEGREE     // ^=
 
 	// логические операторы сравнения
+
 	LIKEN         // ==
 	NOT_EQUAL     // !=
 	LESS_EQUAL    // <=
@@ -115,6 +116,7 @@ const (
 	OR            // ||
 
 	// операторы арифметики
+
 	DECREASE  // -
 	INCREASE  // +
 	MULTIPLY  // *
@@ -123,17 +125,20 @@ const (
 	DEGREE    // ^
 
 	// операторы битовых сдвигов и побитовых операций
+
 	SHR_LESS    // <<
 	SHR_GREATER // >>
 	BITWISE_NOT // ~
 
 	// операторы диапазонов
+
 	OP_RANGE        // ..   (Исключающий / Открытый)
 	RANGE_INCL      // ..=  (Включающий / Закрытый)
 	RANGE_HALF_OPEN // ..<  (Полуоткрытый)
 	OP_ARRAY        // ...
 
 	// операторы управления данных
+
 	GOES_OVER //  =>
 	OP_RETURN // ->
 	PIPE      // |>
@@ -142,12 +147,11 @@ const (
 	TAKE_LINK // &
 
 	// операторы разделения
+
 	COLON // :
 	END   // ;
 	COMMA // ,
 	DOT   // .
-
-	operator_end
 
 	EndToken
 )
@@ -156,10 +160,12 @@ func (tk *TokenKind) Group() TokenKind {
 	switch *tk {
 	case INTEGER, IMAGINARY, FLOATING:
 		return GNUMBER
-	case STRING, T_STRING, RAW_STRING:
+	case STRING, T_STRING, RAW_STRING, CHARACTER:
 		return GSTRING
 	case DECREASE, INCREASE, MULTIPLY, DIVIDE, REMAINDER, DEGREE:
 		return GARITHMETIC
+	case GARITHMETIC, GSTRING, IDENTIFIER:
+		return GLITERAL
 	default:
 		return *tk
 	}

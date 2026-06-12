@@ -23,8 +23,8 @@ var Actions = []ActionStruct{
 	Err(reporter.NoError), // 13
 	Err(reporter.NoError), // 14
 	Err(reporter.NoError), // 15
-	Err(reporter.NoError), // 16
-	Err(reporter.NoError), // 17
+	Acc(), // 16
+	Sh(1), // 17
 	Err(reporter.NoError), // 18
 	Err(reporter.NoError), // 19
 	Err(reporter.NoError), // 20
@@ -59,12 +59,7 @@ var Actions = []ActionStruct{
 	Err(reporter.NoError), // 49
 	Err(reporter.NoError), // 50
 	Err(reporter.NoError), // 51
-	Err(reporter.NoError), // 52
-	Err(reporter.NoError), // 53
-	Err(reporter.NoError), // 54
-	Err(reporter.NoError), // 55
-	Err(reporter.NoError), // 56
-	Sh(3), // 57
+	Sh(3), // 52
 }
 
 var Check = []int{
@@ -73,7 +68,7 @@ var Check = []int{
 	-1, // 2
 	-1, // 3
 	-1, // 4
-	-1, // 5
+	1, // 5
 	0, // 6
 	-1, // 7
 	-1, // 8
@@ -84,8 +79,8 @@ var Check = []int{
 	-1, // 13
 	-1, // 14
 	-1, // 15
-	-1, // 16
-	-1, // 17
+	1, // 16
+	0, // 17
 	-1, // 18
 	-1, // 19
 	-1, // 20
@@ -120,16 +115,12 @@ var Check = []int{
 	-1, // 49
 	-1, // 50
 	-1, // 51
-	-1, // 52
-	-1, // 53
-	-1, // 54
-	-1, // 55
-	-1, // 56
-	0, // 57
+	0, // 52
 }
 
 var Base = []int{
 	0, // state 0
+	0, // state 1
 }
 
 func Action(state int, tk TokenKind) ActionStruct {
@@ -144,5 +135,5 @@ func Action(state int, tk TokenKind) ActionStruct {
 	if idx >= 0 && idx < len(Actions) && Check[idx] == state {
 		return Actions[idx]
 	}
-	return Err(reporter.NoError)
+	return Err(reporter.StateDoesNotToken)
 }

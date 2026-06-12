@@ -155,7 +155,7 @@ func GenerateActionTable(src *map[int]map[TokenKind]ActionStruct, tokenCount int
 	out.WriteString("\tif idx >= 0 && idx < len(Actions) && Check[idx] == state {\n")
 	out.WriteString("\t\treturn Actions[idx]\n")
 	out.WriteString("\t}\n")
-	out.WriteString("\treturn Err(reporter.NoError)\n")
+	out.WriteString("\treturn Err(reporter.StateDoesNotToken)\n")
 	out.WriteString("}\n")
 	return out.String()
 }
