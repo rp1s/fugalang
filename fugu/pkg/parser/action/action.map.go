@@ -36,11 +36,11 @@ type table struct {
 func Sh(state int) ActionStruct {
 	return ActionStruct{Typ: Shift, Num: state, ErrCode: reporter.NoError}
 }
-func Red(rule int) ActionStruct {
-	return ActionStruct{Typ: Reduce, Num: rule, ErrCode: reporter.NoError}
+func Red(state int) ActionStruct {
+	return ActionStruct{Typ: Reduce, Num: state, ErrCode: reporter.NoError}
 }
-func Acc() ActionStruct                { return ActionStruct{Typ: Accept, ErrCode: reporter.NoError} }
-func Err(e reporter.Code) ActionStruct { return ActionStruct{Typ: Error, ErrCode: e} }
+func Acc() ActionStruct                { return ActionStruct{Typ: Accept, Num: 0, ErrCode: reporter.NoError} }
+func Err(e reporter.Code) ActionStruct { return ActionStruct{Typ: Error, Num: 0, ErrCode: e} }
 
 func BuildActionSlice(src *map[int]map[TokenKind]ActionStruct) *table {
 	ms := 0

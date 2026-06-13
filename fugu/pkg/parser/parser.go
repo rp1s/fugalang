@@ -54,12 +54,13 @@ func (ps *Parser) advance() *Parser {
 
 func (ps *Parser) Run() {
 	var state int = 0
+	var stack []token.Token = make([]token.Token, 64)
 	for {
 		as := action.Action(state, ps.curToken.Kind)
 
 		switch as.Typ {
 		case action.Accept:
-			break
+			// TODO: создание
 		case action.Reduce:
 			break
 		case action.Shift:
