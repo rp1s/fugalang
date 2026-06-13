@@ -9,6 +9,7 @@ const (
 	// NoClosing
 	LexerNoClosing // не закрыт блок и тд
 
+	ParserCantStartWork
 	StateDoesNotToken // состояние не расчитывает на этот токен
 )
 
@@ -21,6 +22,10 @@ func (c Code) Msg() string {
 		return "тестовая ошибка"
 	case LexerNoClosing:
 		return "пропущен закрывающий символ"
+	case StateDoesNotToken:
+		return "ошибка при работе с таблицой состояний"
+	case ParserCantStartWork:
+		return "нету возможности запучтить разбор"
 	default:
 		return "неизвестная ошибка"
 	}
@@ -30,22 +35,35 @@ func (c Code) Notes() []string {
 	switch c {
 	case NoError:
 		return []string{
-			"Ой, кажется, я сломался изнутри! Этого не должно было быть напечатано.",
-			"Пожалуйста, создайте баг-репорт:",
+			"Внутренняя ошибка отладки: сбой компонента.",
+			"Некорректное состояние, не ожидаемое при штатной работе.",
+			"Пожалуйста, сообщите об ошибке по адресу:",
 			"  https://github.com/fugalang/fugu/issues",
-			"Если вам не трудно, опишите в репорте сценарий, при котором вы обнаружили это недоразумение.",
+			"По возможности приложите описание сценария воспроизведения.",
 		}
 	case TestError:
 		return []string{
-			"Ой, кажется, я сломался изнутри! Это внутренняя отладочная ошибка.",
-			"Я не должен был спотыкаться на этом месте при обычной работе.",
-			"Пожалуйста, создайте об этом баг-репорт:",
+			"Внутренняя ошибка отладки: сбой компонента.",
+			"Некорректное состояние, не ожидаемое при штатной работе.",
+			"Пожалуйста, сообщите об ошибке по адресу:",
 			"  https://github.com/fugalang/fugu/issues",
-			"Если вам не трудно, опишите в репорте сценарий, при котором вы обнаружили эту проблему.",
+			"По возможности приложите описание сценария воспроизведения.",
 		}
 
-	case LexerNoClosing:
-		return []string{}
+	case StateDoesNotToken:
+		return []string{
+			"Внутренняя ошибка отладки: сбой компонента.",
+			"Некорректное состояние, не ожидаемое при штатной работе.",
+			"Пожалуйста, сообщите об ошибке по адресу:",
+			"  https://github.com/fugalang/fugu/issues",
+			"По возможности приложите описание сценария воспроизведения.",
+		}
+
+	case ParserCantStartWork:
+		return []string{
+			"Исправьте прошлые ошибки, чтобы парсер отработал корректно.",
+		}
+
 	default:
 		return []string{}
 	}
@@ -59,6 +77,10 @@ func (c Code) Code() string {
 		return "TestError"
 	case LexerNoClosing:
 		return "LexerNoClosing"
+	case ParserCantStartWork:
+		return "ParserCantStartWork"
+	case StateDoesNotToken:
+		return "StateDoesNotToken"
 	default:
 		return "NoError"
 	}
@@ -66,10 +88,6 @@ func (c Code) Code() string {
 
 func (c Code) Arrow() string {
 	switch c {
-	case NoError:
-		return ""
-	case TestError:
-		return ""
 	case LexerNoClosing:
 		return "закрой за собой!"
 	default:
@@ -80,6 +98,10 @@ func (c Code) Arrow() string {
 func (c Code) IsUseBlock() bool {
 	switch c {
 	case NoError:
+		return false
+	case StateDoesNotToken:
+		return false
+	case ParserCantStartWork:
 		return false
 	default:
 		return true
